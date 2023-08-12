@@ -1,5 +1,6 @@
 package com.buddycode.customer;
 
+import com.buddycode.amqp.RabbitMQMessageProducer;
 import com.buddycode.clients.fraud.FraudCheckResponse;
 import com.buddycode.clients.fraud.FraudClient;
 import com.buddycode.clients.notification.NotificationClient;
@@ -14,7 +15,8 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final FraudClient fraudClient;
-    private final NotificationClient notificationClient;
+//    private final NotificationClient notificationClient;
+    private final RabbitMQMessageProducer producer;
     public void registerCustomer(CustomerRegistrationRequest customerRegistrationRequest){
         Customer customer = Customer.builder()
                 .firstName(customerRegistrationRequest.firstName())
@@ -29,7 +31,9 @@ public class CustomerService {
             throw  new IllegalStateException("fraudster");
         }
 
-        notificationClient.sendNotification(new NotificationRequest("Hi Welcome to BuddyCode", customer.getEmail(), customer.getId()));
+        NotificationRequest hiWelcomeToBuddyCode = new NotificationRequest("Hi Welcome to BuddyCode", customer.getEmail(), customer.getId());
+//        notificationClient.sendNotification(hiWelcomeToBuddyCode);
+        producer.publish(hiWelcomeToBuddyCode,"internal.exchange","internal.notification.routing.key");
         customerRepository.save(customer);
 
     }
